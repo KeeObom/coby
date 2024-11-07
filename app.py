@@ -12,6 +12,9 @@ data = pd.read_excel("./data/bearing_data.xlsx")
 root = tk.Tk()
 root.title("Bearing Inventory Search")
 
+# Initialize a variable to hold current results for sorting
+current_result = data.copy()
+
 
 # Search function
 def search():
@@ -37,32 +40,39 @@ def search():
     if result.empty:
         result_text.delete("1.0", tk.END)
         result_text.insert(tk.END, "No results found.\n")
+        current_result = data.copy()  # Reset to full data in case of empty result
         return
-
-
-    # Clear previous results and add headers
-    result_text.delete("1.0", tk.END)
-    result_text.insert(tk.END, f"{'Bearing':<8} {'Warehouse':<9} {'Grid':<5} {'Car':<6} {'Price':<5} {'Quantity':<5}\n")
-    result_text.insert(tk.END, "-"*46 + "\n")
-
     
-    # Display results    
-    for _, row in result.iterrows():
-        result_text.insert(tk.END, f"{row['BearingNumber']:<8} {row['Warehouse']:<9} {row['Grid']:<5} {row['CarType']:<6} {row['Price']:<5} {row['Quantity']:<5}\n")
+    # Update current_result and display it
+    current_result = result
+    display_data(current_result)
 
 
-# Sorting function for quantity and price
+
+# Sorting function for quantity and price that works on current results
 def sort_by(column_name):
-    sorted_data = data.sort_values(by=column_name, ascending=True)
-    display_data(sorted_data)
+    global current_result
+    current_result = current_result.sort_values(by=column_name, ascending=True)
+    display_data(current_result)
+
+
+# Clear search results and show full data
+def clear_search():
+    global current_result
+    entry.delete(0, tk.END)  # Clear the search entry
+    current_result = data.copy()  # Reset to full data
+    display_data(current_result)
+
 
 
 # Display data function for sorting and initial load
 def display_data(dataset):
+    # clear the text widget and add headers
     result_text.delete("1.0", tk.END)
     result_text.insert(tk.END, f"{'Bearing':<8} {'Warehouse':<9} {'Grid':<5} {'Car':<6} {'Price':<5} {'Quantity':<5}\n")
     result_text.insert(tk.END, "-"*60 + "\n")
 
+    # Display each row in the dataset
     for _, row in dataset.iterrows():
         result_text.insert(tk.END, f"{row['BearingNumber']:<8} {row['Warehouse']:<9} {row['Grid']:<5} {row['CarType']:<6} {row['Price']:<5} {row['Quantity']:<5}\n")
 
@@ -84,6 +94,10 @@ sort_quantity_button.pack()
 
 sort_price_button = tk.Button(root, text="Sort by Price", command=lambda: sort_by('Price'))
 sort_price_button.pack()
+
+# Clear button
+clear_button = tk.Button(root, text="Clear", command=clear_search)
+clear_button.pack()
 
 # Result display area with scrollbar
 result_text = tk.Text(root, height=20, width=60)
